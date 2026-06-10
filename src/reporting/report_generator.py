@@ -6,19 +6,18 @@ import plotly.io as pio
 from src.utils.helpers import ensure_dir
 
 
-def _metrics_table(metrics: Dict[str, Any]) -> str:
-    rows = [
-        ("Total login attempts", metrics.get("total_logins", 0)),
-        ("Failed logins", metrics.get("failed_logins", 0)),
-        ("Successful logins", metrics.get("successful_logins", 0)),
-        ("Unique IPs", metrics.get("unique_ips", 0)),
+def _metrics_table(metrics: Dict[str, Any], suspicious_count: int) -> str:
+    kpis = [
+        ("Total de Eventos", metrics.get("total_logins", 0)),
+        ("Intentos Fallidos", metrics.get("failed_logins", 0)),
+        ("IPs Sospechosas", suspicious_count),
+        ("Usuarios Targeted", metrics.get("unique_users", 0)),
     ]
 
-    html = ["<table class='metrics'>"]
-    html.append("<tr><th>Metric</th><th>Value</th></tr>")
-    for label, value in rows:
-        html.append(f"<tr><td>{label}</td><td>{value}</td></tr>")
-    html.append("</table>")
+    html = ["<div class='kpi-container'>"]
+    for label, value in kpis:
+        html.append(f"<div class='kpi-card'><div class='kpi-label'>{label}</div><div class='kpi-value'>{value}</div></div>")
+    html.append("</div>")
     return "\n".join(html)
 
 
@@ -53,7 +52,7 @@ def _attack_summary_table(summary_df) -> str:
     header = "".join([f"<th>{labels[col]}</th>" for col in columns])
     html.append(f"<tr>{header}</tr>")
 
-    for _, row in summary_df[columns].iterrows():
+    for _, row in summary_df[columns].head(10).iterrows():
         row_html = "".join([f"<td>{row[col]}</td>" for col in columns])
         html.append(f"<tr>{row_html}</tr>")
 
@@ -98,57 +97,79 @@ def generate_report(
         "<meta charset='utf-8'>",
         "<title>Security Report</title>",
         "<style>",
-        "body { font-family: Arial, sans-serif; margin: 30px; color: #111; }",
-        "h1, h2 { color: #0b3d91; }",
-        ".section { margin-bottom: 28px; }",
-        "table.metrics { border-collapse: collapse; width: 420px; }",
-        "table.metrics th, table.metrics td { border: 1px solid #ccc; padding: 8px; }",
-        "table.metrics th { background: #f1f1f1; text-align: left; }",
+        "body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f8f9fb; color: #31333f; }",
+        ".container { max-width: 1200px; margin: auto; }",
+        "h1 { color: #1f1f1f; border-bottom: 2px solid #e6e9ef; padding-bottom: 10px; }",
+        "h2 { color: #262730; margin-top: 40px; font-size: 1.5rem; }",
+        ".kpi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }",
+        ".kpi-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e6e9ef; text-align: center; }",
+        ".kpi-label { font-size: 0.9rem; color: #6d7284; margin-bottom: 5px; }",
+        ".kpi-value { font-size: 1.8rem; font-weight: bold; color: #ff4b4b; }",
+        ".grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; }",
+        ".card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e6e9ef; margin-bottom: 20px; }",
+        "table.metrics { border-collapse: collapse; width: 100%; margin-top: 10px; }",
+        "table.metrics th, table.metrics td { text-align: left; padding: 12px; border-bottom: 1px solid #e6e9ef; }",
+        "table.metrics th { background-color: #f0f2f6; color: #262730; }",
         "ul { padding-left: 18px; }",
+        ".status-info { background-color: #e7f4ff; border-left: 5px solid #007bff; padding: 15px; margin: 20px 0; border-radius: 4px; }",
         "</style>",
         "</head>",
         "<body>",
-        "<h1>Cybersecurity Log Analyzer Report</h1>",
+        "<div class='container'>",
+        "<h1>🛡️ Cybersecurity Log Analyzer</h1>",
+        "<div class='status-info'>Este reporte presenta un análisis forense de los logs de autenticación procesados.</div>",
+        
         "<div class='section'>",
-        "<h2>Summary Metrics</h2>",
-        _metrics_table(metrics),
+        "<h2>📌 Indicadores Clave (KPIs)</h2>",
+        _metrics_table(metrics, len(suspicious_ips)),
         "</div>",
-        "<div class='section'>",
-        "<h2>Suspicious IPs</h2>",
-        _list_block(suspicious_ips, "No suspicious IPs detected."),
+
+        "<div class='grid'>",
+        "<div class='card'>",
+        "<h2>📊 Tipos de Eventos</h2>",
+        pio.to_html(charts["failed_vs_success"], full_html=False, include_plotlyjs="cdn"),
         "</div>",
-        "<div class='section'>",
-        "<h2>Most Targeted Users</h2>",
-        _list_block(top_users_list, "No targeted users detected."),
-        "</div>",
-        "<div class='section'>",
-        "<h2>Risk Scores by IP</h2>",
-        _attack_summary_table(metrics.get("attack_summary")),
-        "</div>",
-        "<div class='section'>",
-        "<h2>Top Attacking IPs</h2>",
-        pio.to_html(charts["top_ips"], full_html=False, include_plotlyjs="cdn"),
-        "</div>",
-        "<div class='section'>",
-        "<h2>Failed vs Successful Logins</h2>",
-        pio.to_html(charts["failed_vs_success"], full_html=False, include_plotlyjs=False),
-        "</div>",
-        "<div class='section'>",
-        "<h2>Attacks Over Time</h2>",
+        "<div class='card'>",
+        "<h2>📈 Ataques en el Tiempo</h2>",
         pio.to_html(charts["attacks_over_time"], full_html=False, include_plotlyjs=False),
         "</div>",
-        "<div class='section'>",
-        "<h2>Most Targeted Users (Chart)</h2>",
-        pio.to_html(charts["top_users"], full_html=False, include_plotlyjs=False),
         "</div>",
-        "<div class='section'>",
-        "<h2>Attacks by Country</h2>",
+
+        "<div class='grid'>",
+        "<div class='card'>",
+        "<h2>🌍 Distribución por País</h2>",
         pio.to_html(charts["attacks_by_country"], full_html=False, include_plotlyjs=False),
         "</div>",
-        "<div class='section'>",
-        "<h2>Activity Heatmap</h2>",
+        "<div class='card'>",
+        "<h2>🔥 Mapa de Calor de Actividad</h2>",
         pio.to_html(charts["heatmap"], full_html=False, include_plotlyjs=False),
         "</div>",
+        "</div>",
+
+        "<div class='grid'>",
+        "<div class='card'>",
+        "<h2>🔍 IPs Sospechosas Detectadas</h2>",
+        _list_block(suspicious_ips, "No se detectaron IPs sospechosas."),
+        "</div>",
+        "<div class='card'>",
+        "<h2>👥 Usuarios más Atacados</h2>",
+        _list_block(top_users_list, "No se detectaron usuarios objetivo."),
+        "</div>",
+        "</div>",
+
+        "<div class='card'>",
+        "<h2>⚖️ Matriz de Riesgo por IP</h2>",
+        _attack_summary_table(metrics.get("attack_summary")),
+        "</div>",
+
+        "<div class='grid'>",
+        "<div class='card'>",
+        "<h2>Top IPs Atacantes</h2>",
+        pio.to_html(charts["top_ips"], full_html=False, include_plotlyjs=False),
+        "</div>",
+        "</div>",
+
+        "</div>", # Close container
         "</body>",
         "</html>",
     ]

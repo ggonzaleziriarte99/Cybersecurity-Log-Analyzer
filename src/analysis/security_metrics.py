@@ -18,6 +18,7 @@ def compute_security_metrics(df: pd.DataFrame, geo_df: Optional[pd.DataFrame] = 
             "failed_logins": 0,
             "successful_logins": 0,
             "unique_ips": 0,
+            "unique_users": 0,
             "top_attacking_ips": pd.DataFrame(columns=["ip_address", "failed_attempts"]),
             "attack_summary": pd.DataFrame(
                 columns=["ip_address", "failed_attempts", "risk_score", "country", "city"]
@@ -35,6 +36,7 @@ def compute_security_metrics(df: pd.DataFrame, geo_df: Optional[pd.DataFrame] = 
     failed = int((df["status"] == "failed").sum())
     success = int((df["status"] == "success").sum())
     unique_ips = int(df["ip_address"].nunique())
+    unique_users = int(df["user"].nunique())
 
     failed_df = df[df["status"] == "failed"].copy()
 
@@ -102,6 +104,7 @@ def compute_security_metrics(df: pd.DataFrame, geo_df: Optional[pd.DataFrame] = 
         "failed_logins": failed,
         "successful_logins": success,
         "unique_ips": unique_ips,
+        "unique_users": unique_users,
         "top_attacking_ips": top_ips,
         "attack_summary": attack_summary,
         "most_targeted_users": top_users,
