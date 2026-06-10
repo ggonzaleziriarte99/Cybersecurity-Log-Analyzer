@@ -46,12 +46,12 @@ direcciones IP maliciosas y cuentas de usuario bajo riesgo.
 
 # Procesamiento de datos (reutilizando la lógica de main.py)
 @st.cache_data
-def load_security_data(log_path):
+def load_security_data(log_path, last_modified):
     """
     Carga y procesa los datos de seguridad.
-    Recibe log_path para invalidar caché si el archivo cambia.
+    Recibe last_modified para invalidar caché si el archivo físico cambia.
     """
-    if not os.path.exists(LOG_FILE):
+    if not os.path.exists(log_path):
         return None, None, None, None
     
     # Aseguramos que el path sea un string o Path object válido
@@ -71,18 +71,18 @@ def load_security_data(log_path):
     
     return df, patterns, metrics, charts
 
-df, patterns, metrics, charts = load_security_data(str(LOG_FILE))
+log_mtime = os.path.getmtime(LOG_FILE) if os.path.exists(LOG_FILE) else 0
+df, patterns, metrics, charts = load_security_data(str(LOG_FILE), log_mtime)
 
 if df is None or df.empty:
     st.error("No se pudo cargar el archivo 'data/auth.log'. Por favor verifica la ruta.")
 else:
-    # KPIs Principales
     st.subheader("📌 Indicadores Clave de Seguridad (KPIs)")
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Total de Eventos", len(df))
-    m2.metric("Intentos Fallidos", len(df[df["status"].str.lower().str.contains("failed", na=False)]))
+    m1.metric("Total de Eventos", metrics["total_logins"])
+    m2.metric("Intentos Fallidos", metrics["failed_logins"])
     m3.metric("IPs Sospechosas", len(patterns["suspicious_ips"]))
-    m4.metric("Usuarios Targeted", df["user"].nunique())
+    m4.metric("Usuarios Targeted", metrics["unique_users"])
 
     st.divider()
 
