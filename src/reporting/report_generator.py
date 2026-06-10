@@ -121,17 +121,17 @@ def generate_report(
         
         "<div class='section'>",
         "<h2>📌 Indicadores Clave (KPIs)</h2>",
-        _metrics_table(metrics, len(suspicious_ips)),
+        _metrics_table(metrics, len(suspicious_ips) if suspicious_ips else 0),
         "</div>",
 
         "<div class='grid'>",
         "<div class='card'>",
-        "<h2>📊 Tipos de Eventos</h2>",
+        "<h3>📊 Tipos de Eventos</h3>",
         pio.to_html(charts["failed_vs_success"], full_html=False, include_plotlyjs="cdn"),
         "</div>",
         "<div class='card'>",
-        "<h2>📈 Ataques en el Tiempo</h2>",
-        pio.to_html(charts["attacks_over_time"], full_html=False, include_plotlyjs=False),
+        "<h3>📈 Ataques en el Tiempo</h3>",
+        pio.to_html(charts["attacks_over_time"], full_html=False, include_plotlyjs="cdn"),
         "</div>",
         "</div>",
 

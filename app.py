@@ -3,29 +3,16 @@ import pandas as pd
 from pathlib import Path
 import os
 import logging
+from src.parser.log_parser import parse_log_file
+from src.detection.attack_patterns import analyze_attack_patterns
+from src.analysis.security_metrics import compute_security_metrics
+from src.visualization.charts import build_charts
+from config import (
+    LOG_FILE, BRUTE_FORCE_THRESHOLD, BRUTE_FORCE_WINDOW_MINUTES,
+    SUSPICIOUS_IP_MIN_FAILED, REPORT_PATH
+)
 
 logging.basicConfig(level=logging.INFO)
-
-# Importación de módulos existentes del proyecto
-try:
-    from src.parser.log_parser import parse_log_file
-    from src.detection.attack_patterns import analyze_attack_patterns
-    from src.analysis.security_metrics import compute_security_metrics
-    from src.visualization.charts import build_charts
-    from src.enrichment.ip_geolocation import enrich_ip_locations
-    from config import (
-        LOG_FILE, BRUTE_FORCE_THRESHOLD, BRUTE_FORCE_WINDOW_MINUTES,
-        SUSPICIOUS_IP_MIN_FAILED, GEOLOCATION_ENABLED, GEOLOCATION_PROVIDER,
-        GEOLOCATION_API_KEY, REPORT_PATH
-    )
-except ImportError:
-    logging.warning("Configuración local no encontrada. Usando valores por defecto.")
-    LOG_FILE = Path("data/auth.log")
-    BRUTE_FORCE_THRESHOLD = 5
-    BRUTE_FORCE_WINDOW_MINUTES = 10
-    SUSPICIOUS_IP_MIN_FAILED = 3
-    GEOLOCATION_ENABLED = False
-    REPORT_PATH = Path("outputs/security_report.html")    
 
 # Configuración de la página
 st.set_page_config(
