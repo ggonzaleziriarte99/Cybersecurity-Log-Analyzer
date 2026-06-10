@@ -90,8 +90,8 @@ else:
     st.subheader("📊 Visualización de Amenazas")
     g1, g2 = st.columns(2)
     if charts:
-        c_events = charts.get("event_types")
-        c_severity = charts.get("severity")
+        c_events = charts.get("failed_vs_success")
+        c_severity = charts.get("top_ips")
         if c_events:
             g1.plotly_chart(c_events, width="stretch")
         if c_severity:
