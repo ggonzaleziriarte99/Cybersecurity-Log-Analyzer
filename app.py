@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 from pathlib import Path
 import os
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 # Importación de módulos existentes del proyecto
 try:
@@ -16,13 +19,13 @@ try:
         GEOLOCATION_API_KEY, REPORT_PATH
     )
 except ImportError:
-    # Fallback en caso de que la ejecución en la nube no encuentre el config o archivos
+    logging.warning("Configuración local no encontrada. Usando valores por defecto.")
     LOG_FILE = Path("data/auth.log")
     BRUTE_FORCE_THRESHOLD = 5
     BRUTE_FORCE_WINDOW_MINUTES = 10
     SUSPICIOUS_IP_MIN_FAILED = 3
     GEOLOCATION_ENABLED = False
-    REPORT_PATH = Path("outputs/security_report.html")
+    REPORT_PATH = Path("outputs/security_report.html")    
 
 # Configuración de la página
 st.set_page_config(
@@ -56,11 +59,16 @@ direcciones IP maliciosas y cuentas de usuario bajo riesgo.
 
 # Procesamiento de datos (reutilizando la lógica de main.py)
 @st.cache_data
-def load_security_data():
+def load_security_data(log_path):
+    """
+    Carga y procesa los datos de seguridad.
+    Recibe log_path para invalidar caché si el archivo cambia.
+    """
     if not os.path.exists(LOG_FILE):
         return None, None, None, None
     
-    df = parse_log_file(LOG_FILE)
+    # Aseguramos que el path sea un string o Path object válido
+    df = parse_log_file(Path(log_path))
     if df.empty:
         return df, None, None, None
 
@@ -76,7 +84,7 @@ def load_security_data():
     
     return df, patterns, metrics, charts
 
-df, patterns, metrics, charts = load_security_data()
+df, patterns, metrics, charts = load_security_data(str(LOG_FILE))
 
 if df is None or df.empty:
     st.error("No se pudo cargar el archivo 'data/auth.log'. Por favor verifica la ruta.")

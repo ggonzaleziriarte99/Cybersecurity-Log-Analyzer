@@ -2,3 +2,4 @@ pandas>=2.0.0
 plotly>=5.0.0
 pytest>=7.0.0
 streamlit
+python-dotenv>=1.0.0
